@@ -1,0 +1,45 @@
+name: Build Mac Pake App
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install Pake
+        run: pnpm add -g pake-cli
+
+      - name: Build app
+        run: pake https://example.com --name "Test App"
+
+      - name: Collect Mac installer
+        shell: bash
+        run: |
+          mkdir -p out
+          find "$GITHUB_WORKSPACE" \( -name "*.dmg" -o -name "*.app" \) -exec cp -R {} out/ \;
+          ls -la out
+
+      - name: Upload result
+        uses: actions/upload-artifact@v4
+        with:
+          name: pake-macos
+          path: out
+          if-no-files-found: error
